@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube Auto-translate Filter
 // @namespace    Plong-Wasin
-// @version      1.0
+// @version      1.1.0
 // @description  Show only auto-translated subtitle languages on YouTube
 // @author       Plong-Wasin
 // @updateURL    https://github.com/Plong-Wasin/youtube-auto-translate-filter/raw/main/youtube-auto-translate-filter.user.js
@@ -42,19 +42,26 @@
         });
     }
     const menuObserver = new MutationObserver(() => {
+        availableTranslationLanguages = JSON.parse(GM_getValue("availableTranslationLanguages", "[]"));
+        const currentMenuItemsCount = document.querySelectorAll(menuItemSelector).length;
         if (typeof ytInitialPlayerResponse !== "undefined" &&
-            document.querySelectorAll(menuItemSelector).length ===
+            currentMenuItemsCount ===
                 ytInitialPlayerResponse.captions.playerCaptionsTracklistRenderer
                     .translationLanguages.length) {
-            availableTranslationLanguages =
-                ytInitialPlayerResponse.captions.playerCaptionsTracklistRenderer
-                    .translationLanguages;
+            const currentTranslationLanguages = ytInitialPlayerResponse.captions.playerCaptionsTracklistRenderer
+                .translationLanguages;
+            GM_setValue("availableTranslationLanguages", JSON.stringify(currentTranslationLanguages));
+            filterAllowedLanguages();
+        }
+        else if (currentMenuItemsCount === availableTranslationLanguages.length) {
             filterAllowedLanguages();
         }
     });
     menuObserver.observe(document.body, { childList: true, subtree: true });
     GM_registerMenuCommand("Set Allowed Languages", () => {
         const userInput = prompt("Enter a comma-separated list of allowed language codes:", GM_getValue("allowedLanguages", ""));
-        GM_setValue("allowedLanguages", userInput);
+        if (userInput === null) {
+            GM_setValue("allowedLanguages", userInput);
+        }
     });
 })();

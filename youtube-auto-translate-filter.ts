@@ -103,22 +103,44 @@ interface TranslationLanguage {
   }
 
   /**
-   * Observes DOM changes to detect when the YouTube language menu is loaded and triggers filtering.
+   * Observes and filters the YouTube captions language menu based on available translation languages.
+   * Listens for DOM mutations to detect when the language menu is loaded, updates stored languages,
+   * and applies filtering accordingly.
    */
+
   const menuObserver = new MutationObserver(() => {
-    // Check if the YouTube player response and menu items are available
+    // Retrieve stored translation languages from persistent storage
+    availableTranslationLanguages = JSON.parse(
+      GM_getValue("availableTranslationLanguages", "[]")
+    ) as TranslationLanguage[];
+
+    // Count of menu items currently in the DOM matching language menu selector
+    const currentMenuItemsCount =
+      document.querySelectorAll(menuItemSelector).length;
+
+    // Check if YouTube player captions response is defined and menu fully loaded with translation languages
     if (
       typeof ytInitialPlayerResponse !== "undefined" &&
-      document.querySelectorAll(menuItemSelector).length ===
+      currentMenuItemsCount ===
         ytInitialPlayerResponse.captions.playerCaptionsTracklistRenderer
           .translationLanguages.length
     ) {
-      // Update the available translation languages
-      availableTranslationLanguages =
+      // Extract the translation languages available from the YouTube player response
+      const currentTranslationLanguages: TranslationLanguage[] =
         ytInitialPlayerResponse.captions.playerCaptionsTracklistRenderer
           .translationLanguages;
 
-      // Apply the filter to hide unwanted languages
+      // Persist the updated translation languages to storage
+      GM_setValue(
+        "availableTranslationLanguages",
+        JSON.stringify(currentTranslationLanguages)
+      );
+
+      // Apply allowed language filtering on the menu items
+      filterAllowedLanguages();
+    }
+    // If the current menu items count matches the length of stored translation languages, apply filtering again
+    else if (currentMenuItemsCount === availableTranslationLanguages.length) {
       filterAllowedLanguages();
     }
   });
@@ -134,6 +156,8 @@ interface TranslationLanguage {
       "Enter a comma-separated list of allowed language codes:",
       GM_getValue("allowedLanguages", "")
     );
-    GM_setValue("allowedLanguages", userInput);
+    if (userInput === null) {
+      GM_setValue("allowedLanguages", userInput);
+    }
   });
 })();
