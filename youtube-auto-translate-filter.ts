@@ -65,12 +65,12 @@ interface TranslationLanguage {
       document.querySelectorAll<HTMLDivElement>(menuItemSelector);
 
     // Retrieve the allowed language codes from user settings
-    const allowedLanguageCodes = GM_getValue("allowedLanguages", "")
+    const allowedLanguages = GM_getValue("allowedLanguages", "")
       .split(",")
       .map((code) => code.trim().toLowerCase())
       .filter((code) => code !== "");
 
-    if (allowedLanguageCodes.length === 0) {
+    if (allowedLanguages.length === 0) {
       menuItems.forEach((menuItem) => {
         menuItem.style.display = "";
       });
@@ -88,11 +88,12 @@ interface TranslationLanguage {
         availableTranslationLanguages &&
         !availableTranslationLanguages.some(
           (language) =>
-            allowedLanguageCodes.includes(
-              language.languageCode.toLowerCase()
-            ) &&
-            labelElement.textContent?.trim() ===
-              language.languageName.simpleText.trim()
+            (allowedLanguages.includes(language.languageCode.toLowerCase()) &&
+              labelElement.textContent?.trim() ===
+                language.languageName.simpleText.trim()) ||
+            allowedLanguages.includes(
+              labelElement.textContent?.trim().toLowerCase() ?? ""
+            )
         )
       ) {
         menuItem.style.display = "none";
@@ -156,7 +157,7 @@ interface TranslationLanguage {
       "Enter a comma-separated list of allowed language codes:",
       GM_getValue("allowedLanguages", "")
     );
-    if (userInput === null) {
+    if (userInput !== null) {
       GM_setValue("allowedLanguages", userInput);
     }
   });

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube Auto-translate Filter
 // @namespace    Plong-Wasin
-// @version      1.1.0
+// @version      1.2.0
 // @description  Show only auto-translated subtitle languages on YouTube
 // @author       Plong-Wasin
 // @updateURL    https://github.com/Plong-Wasin/youtube-auto-translate-filter/raw/main/youtube-auto-translate-filter.user.js
@@ -17,11 +17,11 @@
     const menuItemSelector = ".ytp-panel-menu > .ytp-menuitem";
     function filterAllowedLanguages() {
         const menuItems = document.querySelectorAll(menuItemSelector);
-        const allowedLanguageCodes = GM_getValue("allowedLanguages", "")
+        const allowedLanguages = GM_getValue("allowedLanguages", "")
             .split(",")
             .map((code) => code.trim().toLowerCase())
             .filter((code) => code !== "");
-        if (allowedLanguageCodes.length === 0) {
+        if (allowedLanguages.length === 0) {
             menuItems.forEach((menuItem) => {
                 menuItem.style.display = "";
             });
@@ -31,9 +31,10 @@
             const labelElement = menuItem.querySelector(".ytp-menuitem-label");
             if (labelElement &&
                 availableTranslationLanguages &&
-                !availableTranslationLanguages.some((language) => allowedLanguageCodes.includes(language.languageCode.toLowerCase()) &&
+                !availableTranslationLanguages.some((language) => (allowedLanguages.includes(language.languageCode.toLowerCase()) &&
                     labelElement.textContent?.trim() ===
-                        language.languageName.simpleText.trim())) {
+                        language.languageName.simpleText.trim()) ||
+                    allowedLanguages.includes(labelElement.textContent?.trim().toLowerCase() ?? ""))) {
                 menuItem.style.display = "none";
             }
             else {
@@ -60,7 +61,7 @@
     menuObserver.observe(document.body, { childList: true, subtree: true });
     GM_registerMenuCommand("Set Allowed Languages", () => {
         const userInput = prompt("Enter a comma-separated list of allowed language codes:", GM_getValue("allowedLanguages", ""));
-        if (userInput === null) {
+        if (userInput !== null) {
             GM_setValue("allowedLanguages", userInput);
         }
     });
