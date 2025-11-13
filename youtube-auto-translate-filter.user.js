@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube Auto-translate Filter
 // @namespace    Plong-Wasin
-// @version      1.2.0
+// @version      1.3.0
 // @description  Show only auto-translated subtitle languages on YouTube
 // @author       Plong-Wasin
 // @updateURL    https://github.com/Plong-Wasin/youtube-auto-translate-filter/raw/main/youtube-auto-translate-filter.user.js
@@ -15,7 +15,30 @@
 (function () {
     let availableTranslationLanguages = null;
     const menuItemSelector = ".ytp-panel-menu > .ytp-menuitem";
+    function isFilterEnabled() {
+        return GM_getValue("filterEnabled", true);
+    }
+    function toggleFilterState() {
+        const newState = !isFilterEnabled();
+        GM_setValue("filterEnabled", newState);
+        if (newState) {
+            filterAllowedLanguages();
+        }
+        else {
+            const menuItems = document.querySelectorAll(menuItemSelector);
+            menuItems.forEach((menuItem) => {
+                menuItem.style.display = "";
+            });
+        }
+        return newState;
+    }
+    function getToggleMenuLabel() {
+        return isFilterEnabled() ? "Disable Filter" : "Enable Filter";
+    }
     function filterAllowedLanguages() {
+        if (!isFilterEnabled()) {
+            return;
+        }
         const menuItems = document.querySelectorAll(menuItemSelector);
         const allowedLanguages = GM_getValue("allowedLanguages", "")
             .split(",")
@@ -59,10 +82,17 @@
         }
     });
     menuObserver.observe(document.body, { childList: true, subtree: true });
-    GM_registerMenuCommand("Set Allowed Languages", () => {
+    GM_registerMenuCommand(getToggleMenuLabel(), () => {
+        const newState = toggleFilterState();
+        alert(`Filter ${newState ? "enabled" : "disabled"}`);
+    });
+    GM_registerMenuCommand(`Set Allowed Languages (${isFilterEnabled() ? "Filter ON" : "Filter OFF"})`, () => {
         const userInput = prompt("Enter a comma-separated list of allowed language codes:", GM_getValue("allowedLanguages", ""));
         if (userInput !== null) {
             GM_setValue("allowedLanguages", userInput);
+            if (isFilterEnabled()) {
+                filterAllowedLanguages();
+            }
         }
     });
 })();

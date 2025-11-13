@@ -58,9 +58,53 @@ interface TranslationLanguage {
   const menuItemSelector = ".ytp-panel-menu > .ytp-menuitem";
 
   /**
+   * Checks if the filter is currently enabled.
+   * @returns {boolean} - True if the filter is enabled, false otherwise.
+   */
+  function isFilterEnabled(): boolean {
+    return GM_getValue("filterEnabled", true);
+  }
+
+  /**
+   * Toggles the filter state and applies changes immediately.
+   * @returns {boolean} - The new filter state after toggling.
+   */
+  function toggleFilterState(): boolean {
+    const newState = !isFilterEnabled();
+    GM_setValue("filterEnabled", newState);
+
+    // Apply changes immediately based on the new state
+    if (newState) {
+      filterAllowedLanguages();
+    } else {
+      // Show all menu items when filter is disabled
+      const menuItems =
+        document.querySelectorAll<HTMLDivElement>(menuItemSelector);
+      menuItems.forEach((menuItem) => {
+        menuItem.style.display = "";
+      });
+    }
+
+    return newState;
+  }
+
+  /**
+   * Returns the appropriate menu label based on the current filter state.
+   * @returns {string} - The menu label text.
+   */
+  function getToggleMenuLabel(): string {
+    return isFilterEnabled() ? "Disable Filter" : "Enable Filter";
+  }
+
+  /**
    * Filters and hides languages not in the allowed list defined by the user.
+   * Only applies filtering if the filter is enabled.
    */
   function filterAllowedLanguages() {
+    // Skip filtering if the filter is disabled
+    if (!isFilterEnabled()) {
+      return;
+    }
     const menuItems =
       document.querySelectorAll<HTMLDivElement>(menuItemSelector);
 
@@ -150,15 +194,35 @@ interface TranslationLanguage {
   menuObserver.observe(document.body, { childList: true, subtree: true });
 
   /**
-   * Registers a menu command to allow the user to set allowed languages.
+   * Registers a menu command to allow the user to toggle the filter state.
    */
-  GM_registerMenuCommand("Set Allowed Languages", () => {
-    const userInput = prompt(
-      "Enter a comma-separated list of allowed language codes:",
-      GM_getValue("allowedLanguages", "")
-    );
-    if (userInput !== null) {
-      GM_setValue("allowedLanguages", userInput);
-    }
+  GM_registerMenuCommand(getToggleMenuLabel(), () => {
+    const newState = toggleFilterState();
+    alert(`Filter ${newState ? "enabled" : "disabled"}`);
+
+    // Update the menu command label by reregistering
+    // Note: In a real implementation, you might need to handle menu refresh differently
+    // as Tampermonkey doesn't provide a direct way to update menu command labels
   });
+
+  /**
+   * Registers a menu command to allow the user to set allowed languages.
+   * The command label includes the current filter status.
+   */
+  GM_registerMenuCommand(
+    `Set Allowed Languages (${isFilterEnabled() ? "Filter ON" : "Filter OFF"})`,
+    () => {
+      const userInput = prompt(
+        "Enter a comma-separated list of allowed language codes:",
+        GM_getValue("allowedLanguages", "")
+      );
+      if (userInput !== null) {
+        GM_setValue("allowedLanguages", userInput);
+        // Apply filtering immediately if the filter is enabled
+        if (isFilterEnabled()) {
+          filterAllowedLanguages();
+        }
+      }
+    }
+  );
 })();
