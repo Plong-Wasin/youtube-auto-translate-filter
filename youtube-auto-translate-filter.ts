@@ -72,32 +72,6 @@ interface TranslationLanguage {
   function toggleFilterState(): boolean {
     const newState = !isFilterEnabled();
     GM_setValue("filterEnabled", newState);
-
-    // Apply changes immediately based on the new state
-    if (newState) {
-      // Only apply filtering if we have translation languages available
-      if (
-        availableTranslationLanguages &&
-        availableTranslationLanguages.length > 0
-      ) {
-        filterAllowedLanguages();
-      } else {
-        // If no translation languages are available, show all menu items
-        const menuItems =
-          document.querySelectorAll<HTMLDivElement>(menuItemSelector);
-        menuItems.forEach((menuItem) => {
-          menuItem.style.display = "";
-        });
-      }
-    } else {
-      // Show all menu items when filter is disabled
-      const menuItems =
-        document.querySelectorAll<HTMLDivElement>(menuItemSelector);
-      menuItems.forEach((menuItem) => {
-        menuItem.style.display = "";
-      });
-    }
-
     return newState;
   }
 
@@ -127,12 +101,7 @@ interface TranslationLanguage {
       .map((code) => code.trim().toLowerCase())
       .filter((code) => code !== "");
 
-    // If there are no allowed languages or no translation languages available, show all menu items
-    if (
-      allowedLanguages.length === 0 ||
-      !availableTranslationLanguages ||
-      availableTranslationLanguages.length === 0
-    ) {
+    if (allowedLanguages.length === 0) {
       menuItems.forEach((menuItem) => {
         menuItem.style.display = "";
       });
@@ -145,11 +114,10 @@ interface TranslationLanguage {
         ".ytp-menuitem-label"
       );
 
-      // Check if the menu item should be hidden based on allowed languages
-      // We know availableTranslationLanguages is not null here because we checked above
-      const shouldHide =
+      if (
         labelElement &&
-        !availableTranslationLanguages!.some(
+        availableTranslationLanguages &&
+        !availableTranslationLanguages.some(
           (language) =>
             (allowedLanguages.includes(language.languageCode.toLowerCase()) &&
               labelElement.textContent?.trim() ===
@@ -157,10 +125,8 @@ interface TranslationLanguage {
             allowedLanguages.includes(
               labelElement.textContent?.trim().toLowerCase() ?? ""
             )
-        );
-
-      // Apply the display style based on whether to hide or show the item
-      if (shouldHide) {
+        )
+      ) {
         menuItem.style.display = "none";
       } else {
         menuItem.style.display = "";
@@ -220,10 +186,6 @@ interface TranslationLanguage {
   GM_registerMenuCommand(getToggleMenuLabel(), () => {
     const newState = toggleFilterState();
     alert(`Filter ${newState ? "enabled" : "disabled"}`);
-
-    // Update the menu command label by reregistering
-    // Note: In a real implementation, you might need to handle menu refresh differently
-    // as Tampermonkey doesn't provide a direct way to update menu command labels
   });
 
   /**

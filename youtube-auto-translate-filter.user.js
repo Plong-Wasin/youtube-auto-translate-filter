@@ -21,24 +21,6 @@
     function toggleFilterState() {
         const newState = !isFilterEnabled();
         GM_setValue("filterEnabled", newState);
-        if (newState) {
-            if (availableTranslationLanguages &&
-                availableTranslationLanguages.length > 0) {
-                filterAllowedLanguages();
-            }
-            else {
-                const menuItems = document.querySelectorAll(menuItemSelector);
-                menuItems.forEach((menuItem) => {
-                    menuItem.style.display = "";
-                });
-            }
-        }
-        else {
-            const menuItems = document.querySelectorAll(menuItemSelector);
-            menuItems.forEach((menuItem) => {
-                menuItem.style.display = "";
-            });
-        }
         return newState;
     }
     function getToggleMenuLabel() {
@@ -53,9 +35,7 @@
             .split(",")
             .map((code) => code.trim().toLowerCase())
             .filter((code) => code !== "");
-        if (allowedLanguages.length === 0 ||
-            !availableTranslationLanguages ||
-            availableTranslationLanguages.length === 0) {
+        if (allowedLanguages.length === 0) {
             menuItems.forEach((menuItem) => {
                 menuItem.style.display = "";
             });
@@ -63,12 +43,12 @@
         }
         menuItems.forEach((menuItem) => {
             const labelElement = menuItem.querySelector(".ytp-menuitem-label");
-            const shouldHide = labelElement &&
+            if (labelElement &&
+                availableTranslationLanguages &&
                 !availableTranslationLanguages.some((language) => (allowedLanguages.includes(language.languageCode.toLowerCase()) &&
                     labelElement.textContent?.trim() ===
                         language.languageName.simpleText.trim()) ||
-                    allowedLanguages.includes(labelElement.textContent?.trim().toLowerCase() ?? ""));
-            if (shouldHide) {
+                    allowedLanguages.includes(labelElement.textContent?.trim().toLowerCase() ?? ""))) {
                 menuItem.style.display = "none";
             }
             else {
