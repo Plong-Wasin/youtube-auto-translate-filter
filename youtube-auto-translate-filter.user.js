@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube Auto-translate Filter
 // @namespace    Plong-Wasin
-// @version      1.3.0
+// @version      1.3.1
 // @description  Show only auto-translated subtitle languages on YouTube
 // @author       Plong-Wasin
 // @updateURL    https://github.com/Plong-Wasin/youtube-auto-translate-filter/raw/main/youtube-auto-translate-filter.user.js
@@ -22,7 +22,16 @@
         const newState = !isFilterEnabled();
         GM_setValue("filterEnabled", newState);
         if (newState) {
-            filterAllowedLanguages();
+            if (availableTranslationLanguages &&
+                availableTranslationLanguages.length > 0) {
+                filterAllowedLanguages();
+            }
+            else {
+                const menuItems = document.querySelectorAll(menuItemSelector);
+                menuItems.forEach((menuItem) => {
+                    menuItem.style.display = "";
+                });
+            }
         }
         else {
             const menuItems = document.querySelectorAll(menuItemSelector);
@@ -44,7 +53,9 @@
             .split(",")
             .map((code) => code.trim().toLowerCase())
             .filter((code) => code !== "");
-        if (allowedLanguages.length === 0) {
+        if (allowedLanguages.length === 0 ||
+            !availableTranslationLanguages ||
+            availableTranslationLanguages.length === 0) {
             menuItems.forEach((menuItem) => {
                 menuItem.style.display = "";
             });
@@ -52,12 +63,12 @@
         }
         menuItems.forEach((menuItem) => {
             const labelElement = menuItem.querySelector(".ytp-menuitem-label");
-            if (labelElement &&
-                availableTranslationLanguages &&
+            const shouldHide = labelElement &&
                 !availableTranslationLanguages.some((language) => (allowedLanguages.includes(language.languageCode.toLowerCase()) &&
                     labelElement.textContent?.trim() ===
                         language.languageName.simpleText.trim()) ||
-                    allowedLanguages.includes(labelElement.textContent?.trim().toLowerCase() ?? ""))) {
+                    allowedLanguages.includes(labelElement.textContent?.trim().toLowerCase() ?? ""));
+            if (shouldHide) {
                 menuItem.style.display = "none";
             }
             else {

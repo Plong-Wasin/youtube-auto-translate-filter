@@ -75,7 +75,20 @@ interface TranslationLanguage {
 
     // Apply changes immediately based on the new state
     if (newState) {
-      filterAllowedLanguages();
+      // Only apply filtering if we have translation languages available
+      if (
+        availableTranslationLanguages &&
+        availableTranslationLanguages.length > 0
+      ) {
+        filterAllowedLanguages();
+      } else {
+        // If no translation languages are available, show all menu items
+        const menuItems =
+          document.querySelectorAll<HTMLDivElement>(menuItemSelector);
+        menuItems.forEach((menuItem) => {
+          menuItem.style.display = "";
+        });
+      }
     } else {
       // Show all menu items when filter is disabled
       const menuItems =
@@ -114,7 +127,12 @@ interface TranslationLanguage {
       .map((code) => code.trim().toLowerCase())
       .filter((code) => code !== "");
 
-    if (allowedLanguages.length === 0) {
+    // If there are no allowed languages or no translation languages available, show all menu items
+    if (
+      allowedLanguages.length === 0 ||
+      !availableTranslationLanguages ||
+      availableTranslationLanguages.length === 0
+    ) {
       menuItems.forEach((menuItem) => {
         menuItem.style.display = "";
       });
@@ -127,10 +145,11 @@ interface TranslationLanguage {
         ".ytp-menuitem-label"
       );
 
-      if (
+      // Check if the menu item should be hidden based on allowed languages
+      // We know availableTranslationLanguages is not null here because we checked above
+      const shouldHide =
         labelElement &&
-        availableTranslationLanguages &&
-        !availableTranslationLanguages.some(
+        !availableTranslationLanguages!.some(
           (language) =>
             (allowedLanguages.includes(language.languageCode.toLowerCase()) &&
               labelElement.textContent?.trim() ===
@@ -138,8 +157,10 @@ interface TranslationLanguage {
             allowedLanguages.includes(
               labelElement.textContent?.trim().toLowerCase() ?? ""
             )
-        )
-      ) {
+        );
+
+      // Apply the display style based on whether to hide or show the item
+      if (shouldHide) {
         menuItem.style.display = "none";
       } else {
         menuItem.style.display = "";
